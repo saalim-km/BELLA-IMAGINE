@@ -99,7 +99,7 @@ const VendorSchema = new mongoose.Schema({
     enum: ['client', 'vendor', 'admin'],
     default: 'client'
   },
-  photo: {
+  profile: {
     type: String // store URL/path to uploaded photo
   },
   description: {
@@ -107,6 +107,10 @@ const VendorSchema = new mongoose.Schema({
   },
   category: {
     type: String // e.g., "Wedding", "Portrait", etc.
+  },
+  isBlocked : {
+   type : Boolean,
+   required : true
   },
   services: {
     type: [ServiceSchema],
@@ -181,7 +185,7 @@ const PhotoSchema = new mongoose.Schema({
   }
 });
 
-
+// FUNCTION FOR CHECKING THE PHOTO COUNTER GOES HIGHER THAN 15
 
 
 
@@ -204,6 +208,9 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  profile : {
+   type : String,
+  },
   password: {
     type: String,
     required: true
@@ -218,6 +225,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['client', 'vendor', 'admin'],
     default: 'client'
+  },
+  isBlocked : {
+    type : Boolean,
+    required : true
   },
   // Array of vendor IDs that the user has saved
   savedPhotographers: [{
@@ -325,6 +336,40 @@ const BookingSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Booking', BookingSchema);
+
+
+
+
+
+// CATEGORY SCHEMA
+const mongoose = require('mongoose');
+
+const CategorySchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  description: {
+    type: String
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('Category', CategorySchema);
+
+
+
+
+
+
+
+
+
+
 
 
 
