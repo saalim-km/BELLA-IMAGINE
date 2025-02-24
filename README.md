@@ -51,3 +51,105 @@ add -> pro : true || false
 
 
 
+// vendor schema
+const mongoose = require('mongoose');
+
+const ServiceSchema = new mongoose.Schema({
+  duration: {
+    type: Number, // e.g., 5 (hours)
+    required: true
+  },
+  pricePerHour: {
+    type: Number, // e.g., 1000 (INR/hour)
+    required: true
+  }
+});
+
+function serviceArrayLimit(val) {
+  // Ensure the vendor can only add up to 3 services
+  return val.length <= 3;
+}
+
+const VendorSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    unique: true,
+    required: true
+  },
+  phone: {
+    type: String
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  location: {
+    type: String
+  },
+  languages: {
+    type: [String], // e.g., ["English", "Hindi"]
+    default: []
+  },
+  role: {
+    type: String,
+    default: 'vendor' // or however you're handling roles
+  },
+  photo: {
+    type: String // store URL/path to uploaded photo
+  },
+  description: {
+    type: String
+  },
+  category: {
+    type: String // e.g., "Wedding", "Portrait", etc.
+  },
+  services: {
+    type: [ServiceSchema],
+    validate: [serviceArrayLimit, 'Cannot add more than 3 services.']
+  }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Vendor', VendorSchema);
+
+
+
+
+// fetching photos by tags
+Photo.find({ tags: { $all: ["wedding", "outdoor"] } })
+
+
+// Find photos that have at least one of the specified tags
+Photo.find({ tags: { $in: ["wedding", "outdoor"] } })
+
+
+// Indexing
+If you expect many queries by tags, consider creating an index on tags for faster lookups:
+PhotoSchema.index({ tags: 1 });
+
+
+
+
+// photos schema
+const PhotoSchema = new mongoose.Schema({
+  vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+    required: true
+  },
+  url: {
+    type: String,
+    required: true
+  },
+  tags: {
+    type: [String],
+    default: []
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
