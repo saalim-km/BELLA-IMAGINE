@@ -96,7 +96,8 @@ const VendorSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    default: 'vendor' // or however you're handling roles
+    enum: ['client', 'vendor', 'admin'],
+    default: 'client'
   },
   photo: {
     type: String // store URL/path to uploaded photo
@@ -116,6 +117,32 @@ const VendorSchema = new mongoose.Schema({
 module.exports = mongoose.model('Vendor', VendorSchema);
 
 
+
+
+// REVIEWS FOR VENDORS
+const ReviewSchema = new mongoose.Schema({
+  vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+    required: true
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  rating: {
+    type: Number,
+    required: true
+  },
+  comment: String,
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('Review', ReviewSchema);
 
 
 // fetching photos by tags
@@ -153,3 +180,156 @@ const PhotoSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+// client schema
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  phone: {
+    type: String
+  },
+  location: {
+    type: String
+  },
+  role: {
+    type: String,
+    enum: ['client', 'vendor', 'admin'],
+    default: 'client'
+  },
+  // Array of vendor IDs that the user has saved
+  savedPhotographers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor'
+  }]
+}, { timestamps: true });
+
+module.exports = mongoose.model('User', userSchema);
+
+
+
+
+
+
+
+
+
+// 	CRON JOB FOR REMINDER BEFOR THE SESSION 24 HOURS
+	
+// reminderCron.js or server.js
+const cron = require('node-cron');
+const Booking = require('./models/Booking');
+const Notification = require('./models/Notification');
+const moment = require('moment'); // optional, for easier date handling
+
+// Run every hour (or every 30 mins) to check for upcoming sessions
+cron.schedule('0 * * * *', async () => {
+  console.log('Running reminder check...');
+
+  try {
+    // Find bookings that start ~24 hours from now
+    const now = new Date();
+    const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    // Example: find all bookings with date/time around in24Hours
+    const upcomingBookings = await Booking.find({
+      status: 'confirmed',
+      date: { 
+        $gte: new Date(in24Hours.getTime() - 30 * 60 * 1000), // 30-min window
+        $lte: new Date(in24Hours.getTime() + 30 * 60 * 1000)
+      }
+    });
+
+    // For each booking, create a notification for the client
+    for (let booking of upcomingBookings) {
+      await Notification.create({
+        userId: booking.clientId,
+        message: `Reminder: Your session is in 24 hours (${moment(booking.date).format('LLLL')}).`,
+        type: 'reminder'
+      });
+    }
+  } catch (error) {
+    console.error('Error in reminder cron:', error);
+  }
+});
+
+
+
+// BOOKING SCHEMA
+const mongoose = require('mongoose');
+
+const BookingSchema = new mongoose.Schema({
+  vendorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+    required: true
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  // The date/time of the booking (start time or day)
+  date: {
+    type: Date,
+    required: true
+  },
+  // The chosen session slot (e.g., "6 hours", "8 hours")
+  sessionSlot: {
+    type: String,
+    required: true
+  },
+  // The total cost (e.g., price per hour * hours)
+  totalPrice: {
+    type: Number,
+    required: true
+  },
+  // Current status of the booking
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'completed', 'canceled'],
+    default: 'pending'
+  },
+  // Required shoot location	
+  location: {
+    type: String,
+    required: true
+  },
+  // Timestamps
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('Booking', BookingSchema);
+
+
+
+
+
+
+
+
