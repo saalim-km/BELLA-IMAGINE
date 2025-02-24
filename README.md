@@ -150,16 +150,16 @@ module.exports = mongoose.model('Review', ReviewSchema);
 
 
 // fetching photos by tags
-Photo.find({ tags: { $all: ["wedding", "outdoor"] } })
+-> Photo.find({ tags: { $all: ["wedding", "outdoor"] } })
 
 
 // Find photos that have at least one of the specified tags
-Photo.find({ tags: { $in: ["wedding", "outdoor"] } })
+-> Photo.find({ tags: { $in: ["wedding", "outdoor"] } })
 
 
 // Indexing
 If you expect many queries by tags, consider creating an index on tags for faster lookups:
-PhotoSchema.index({ tags: 1 });
+-> PhotoSchema.index({ tags: 1 });
 
 
 
@@ -185,7 +185,46 @@ const PhotoSchema = new mongoose.Schema({
   }
 });
 
+
+
 // FUNCTION FOR CHECKING THE PHOTO COUNTER GOES HIGHER THAN 15
+// photoController.js
+const Photo = require('../models/Photo');
+
+async function addPhoto(req, res) {
+  try {
+    const { vendorId } = req.body;
+    const { url } = req.body; // or from file upload
+
+    // 1. Count how many photos this vendor already has
+    const currentCount = await Photo.countDocuments({ vendorId });
+    if (currentCount >= 15) {
+      return res.status(400).json({
+        message: 'Cannot add more than 15 images for this vendor.'
+      });
+    }
+
+    // 2. If under 15, create the new photo document
+    const newPhoto = await Photo.create({ vendorId, url });
+    return res.status(201).json({
+      message: 'Photo added successfully',
+      photo: newPhoto
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+}
+
+module.exports = { addPhoto };
+
+-> Before creating a new Photo document, you query how many photos are already linked to that vendorId.
+-> If currentCount is 15 or more, you reject the request with an error.
+-> Otherwise, you create the new photo.
+
+
+
+
 
 
 
@@ -247,7 +286,7 @@ module.exports = mongoose.model('User', userSchema);
 
 
 
-// 	CRON JOB FOR REMINDER BEFOR THE SESSION 24 HOURS
+// CRON JOB FOR REMINDER BEFOR THE SESSION 24 HOURS
 	
 // reminderCron.js or server.js
 const cron = require('node-cron');
@@ -367,6 +406,59 @@ module.exports = mongoose.model('Category', CategorySchema);
 
 
 
+
+
+// SCHEMA FOR WALLET (ADMIN , USER , PHOTOGRAPGER)
+const mongoose = require('mongoose');
+
+const WalletSchema = new mongoose.Schema({
+  // Polymorphic reference: ownerId + ownerModel
+  ownerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+  },
+  // The model name this wallet belongs to (e.g., 'User', 'Vendor', or 'Admin')
+  ownerModel: {
+    type: String,
+    required: true,
+    enum: ['User', 'Vendor', 'Admin']
+  },
+
+  balance: {
+    type: Number,
+    default: 0
+  },
+
+  // (Optional) Array of transactions for record-keeping
+  transactions: [
+    {
+      amount: {
+        type: Number,
+        required: true
+      },
+      // 'credit' or 'debit'
+      transactionType: {
+        type: String,
+        enum: ['credit', 'debit'],
+        required: true
+      },
+      description: {
+        type: String
+      },
+      date: {
+        type: Date,
+        default: Date.now
+      }
+    }
+  ],
+
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('Wallet', WalletSchema);
 
 
 
