@@ -33,3 +33,21 @@ Automatic Cancellation & Refund (Policy-Driven)
 Client Cancels → The system automatically checks if the client meets the cancellation policy (e.g., more than 24 hours in advance).
 Instant Refund → If the policy allows, the refund is processed immediately, no photographer approval needed.
 Photographer Notification → The photographer receives a notification/email with the cancellation details and the reason.
+
+
+
+
+
+// update vendor schema
+add -> pro : true || false
+
+
+
+///base url
+/
+/vendor
+/admin
+
+
+
+
